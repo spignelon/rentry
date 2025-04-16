@@ -9,10 +9,6 @@ This package provides a Python client for the Rentry.co API, enabling programmat
 ## Installation
 
 ```sh
-# Install from PyPI (when published)
-pip install rentry
-
-# Or install directly from GitHub
 pip install git+https://github.com/spignelon/rentry.git
 ```
 
