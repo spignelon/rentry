@@ -6,11 +6,15 @@
 
 This package provides a Python client for the Rentry.co API, enabling programmatic creation, editing, and deletion of Rentry entries.
 
+> **Note:** This is a fork of the original Rentry project, created to provide a modern, pip-installable package since the official "rentry" package on PyPI hasn't been updated in over 6 years and is inactive. This repository makes it easy to install and use the latest version of the Rentry client directly from GitHub.
+
 ## Installation
 
 ```sh
 pip install git+https://github.com/spignelon/rentry.git
 ```
+
+This makes the package easily installable while avoiding the outdated version on PyPI.
 
 ## Command-line Usage
 
