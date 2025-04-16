@@ -2,156 +2,129 @@
 
 <a href="https://rentry.co/"><img width="110" height="110" src="https://rentry.co/static/logo-border-fit.png" align="right" alt="rentry.co markdown paste repository"></a>
 
-[Rentry.co](https://rentry.co) is markdown-powered paste/publishing service with preview, custom urls and editing. 
+[Rentry.co](https://rentry.co) is a markdown-powered paste/publishing service with preview, custom URLs and editing. 
 
-This repository contains a simple script that allows pasting and editing from command line interface. It also gives examples for accessing each endpoint programatically.
-  
+This package provides a Python client for the Rentry.co API, enabling programmatic creation, editing, and deletion of Rentry entries.
+
 ## Installation
 
-##### Manually:  
 ```sh
-wget https://raw.githubusercontent.com/radude/rentry/master/rentry -O ./rentry && chmod +x ./rentry
+# Install from PyPI (when published)
+pip install rentry
+
+# Or install directly from GitHub
+pip install git+https://github.com/spignelon/rentry.git
 ```
 
+## Command-line Usage
 
-
-pip install -r 'requirements.txt'
-cp env_example .env
-
-## Usage (Command Interface)
+Once installed, the `rentry` command will be available in your terminal:
 
 ```console
 $ rentry --help
 
-Usage: rentry {new | edit | raw} {-h | --help} {-u | --url} {-p | --edit-code} text
+Usage: rentry {new | edit | raw | fetch | delete} [options] [text]
 
 Commands:
   new     create a new entry
-  edit    edit an existing entry's text
+  edit    edit an existing entry
   raw     get raw markdown text of an existing entry
+  fetch   fetch details about an entry
   delete  delete an entry
     
 Options:
   -h, --help                 show this help message and exit
   -u, --url URL              url for the entry, random if not specified
   -p, --edit-code EDIT-CODE  edit code for the entry, random if not specified
-  -f, --field FIELD-NAME     the field you wish to update (use on update command only)
-  -v, --value VALUE          the value you wish to update (use on update command only)
-
-Fields: (for use on update command only)
-  edit_code
-  url
-  modify_code
-
-Examples:
-  rentry new 'markdown text'               # new entry with random url and edit code
-  rentry new -p pw -u example 'text'       # with custom edit code and url 
-  rentry edit -p pw -u example 'text'      # edit the example entry
-  cat FILE | rentry new                    # read from FILE and paste it to rentry
-  cat FILE | rentry edit -p pw -u example  # read from FILE and edit the example entry
-  rentry raw -u example                    # get raw markdown text
-  rentry raw -u https://rentry.co/example  # -u accepts absolute and relative urls
-
-  rentry delete -p pw -u example          # deletes an entry
-  rentry update -p pw -u example -f 'edit_code' -v 'new-pw'   # Sets the edit code to something new
-  rentry update -p pw -u example -f 'url' -v 'new_url'        # Sets the url to something new
-  rentry update -p pw -u example -f 'modify_code' -v 'm:1'    # Sets the modify code to something new
-  rentry update -p pw -u example -f 'modify_code' -v ''       # Unsets the modify code
-  
+  -m, --metadata METADATA    metadata for the entry (new/edit)
+  -a, --auth AUTH            authentication header for raw endpoint
 ```
 
-##### Url
+### Examples
 
-Optional Url can be set (`-u, --url URL`)  
-It goes rentry.co/HERE. If no Url was set then random Url will be generated automatically.
+```sh
+# Create a new entry with random URL and edit code
+rentry new 'markdown text'
 
-##### Edit code
+# Create with custom edit code and URL
+rentry new -p mypassword -u myurl 'text'
 
-Optional edit code can be set (`-p, --edit-code EDIT-CODE`)  
-It can be used to edit the entry later. If no edit code was set then random edit code will be generated automatically. Generated edit code will be shown to you only once, so remember it or save it. You can share this code with anyone so a group of people can edit the same entry.
+# Edit an existing entry
+rentry edit -p mypassword -u myurl 'updated text'
 
-## Usage (API)
+# Add metadata when creating or editing
+rentry new -m 'OPTION_DISABLE_VIEWS = true' 'text'
 
-See the example scripts for a quick start.
+# Read from a file and post
+cat README.md | rentry new
 
-Send a standard POST request to the below endpoints. Make sure to provide a csrf token and a request header.
+# Get raw markdown content
+rentry raw -u myurl
 
-Starred fields are required. replace [url] with the actual URL in question (without brackets).
+# Fetch entry details (requires edit code)
+rentry fetch -u myurl -p mypassword
 
-Example endpoint (Editing rentry.co/example): /edit/example
+# Delete an entry
+rentry delete -u myurl -p mypassword
+```
 
-All fields that can be used as well as set (url, edit_code, modify_code) have new_ appended to their names when setting them.
+## Python API Usage
 
-### Returns
+You can also use Rentry as a Python library:
 
-* status
-* content (if status is not 200, the error will be displayed here. Otherwise, all return values below are returned contained within this field)
+```python
+import rentry
 
-### /new
+# Create a new entry
+result = rentry.new('My markdown text')
+print(f"Created: {result['url']} with edit code: {result['edit_code']}")
 
-Fields:
+# Edit an existing entry
+rentry.edit('myurl', 'myeditcode', 'Updated content')
 
-* csrfmiddlewaretoken *
-* text *
-* metadata
-* url
-* edit_code
+# Get raw content
+content = rentry.raw('myurl')
 
-### /edit/[url]
+# Fetch entry details
+details = rentry.fetch('myurl', 'myeditcode')
 
-You may provide a modify code to the edit_code field if one is set. Use this to give other people edit access to a page without the ability to steal it.
+# Delete an entry
+rentry.delete('myurl', 'myeditcode')
 
-Fields:
+# Using the client class for multiple operations
+client = rentry.RentryClient()
+result = client.new('My text with custom url', 'customurl', 'myeditcode')
+```
 
-* csrfmiddlewaretoken *
-* edit_code *
-* text
-* metadata
-* update_mode
-* new_url
-* new_edit_code
-* new_modify_code (provide 'm:' to unset, this matches the website's functionality)
+### Working with Metadata
 
-### /raw/[url]
+Rentry supports metadata to customize the appearance of your entries:
 
-Fields:
+```python
+metadata = '''
+OPTION_DISABLE_VIEWS = true
+CONTAINER_MAX_WIDTH = 600px
+CONTENT_TEXT_COLOR = red
+'''
 
-* csrfmiddlewaretoken *
-* url
+# Create with metadata
+rentry.new('My text', metadata=metadata)
 
-Headers:
+# Update only specific metadata fields
+rentry.edit('myurl', 'myeditcode', 'My text', 
+            metadata='CONTENT_FONT_WEIGHT = 600',
+            update_mode='upsert')
+```
 
-rentry-auth (contact support@rentry.co for a code to use here. This header then gives access to all posts at /raw). Or use it as a page's metadata value : SECRET_RAW_ACCESS_CODE to permit raw access without this header.
+## Configuration
 
-Returns:
+Rentry uses environment variables for configuration. Create a `.env` file in your working directory:
 
-* text
+```
+BASE_PROTOCOL="https://"
+BASE_URL="rentry.co"
+```
 
-To fetch metadata, please use /fetch endpoint
+## License
 
-### /fetch/[url]
-
-Fields:
-
-* csrfmiddlewaretoken *
-* edit_code *
-
-Returns:
-
-* url
-* url_case (if you set the URL with a different case structure than all lowercase, this will reflect that)
-* views
-* pub_date (YYYY-MM-DD T HH:MM:SS) (will not change if deleted and re-created)
-* activated_date (if deleted and re-created, this is when this occured last)
-* edit_date
-* modify_code_set (bool)
-* text
-* metadata (returns as an object with key/value pairs. Each value is the entire set metadata value as a single string)
-* metadata_version
-
-### /delete/[url]
-
-Fields:
-
-* csrfmiddlewaretoken *
-* edit_code *
+This project is licensed under the MIT License - see the LICENSE file for details.
